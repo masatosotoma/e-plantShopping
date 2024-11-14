@@ -1,26 +1,15 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./ProductList.css";
 import CartItem from "./CartItem";
+import { addItem } from "./CartSlice";
+import { useDispatch, useSelector } from "react-redux";
 
-function ProductList(props) {
+function ProductList() {
   const [showCart, setShowCart] = useState(false);
   const [showPlants, setShowPlants] = useState(false);
-  // State to control the visibility of the About Us page
-
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.items);
-  console.log(cartItems);
-  useEffect(() => {
-    const updatedAddedToCart = {};
-    cartItems.forEach((item) => {
-      updatedAddedToCart[item.name] = true;
-    });
-    setAddedToCart(updatedAddedToCart);
-  }, [cartItems]);
-
-  const totalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
-  };
+  const numberOfItems = useSelector((state) => state.cart.items.length);
+  const itemState = useSelector((state) => state.cart.items);
 
   const plantsArray = [
     {
@@ -286,50 +275,35 @@ function ProductList(props) {
   };
   const handleCartClick = (e) => {
     e.preventDefault();
-    setShowCart(true); // Set showCart to true when cart icon is clicked
+    setShowCart(!showCart);
   };
   const handlePlantsClick = (e) => {
     e.preventDefault();
-    setShowPlants(true); // Set showAboutUs to true when "About Us" link is clicked
-    setShowCart(false); // Hide the cart when navigating to About Us
+    setShowPlants(true);
+    setShowCart(false);
   };
 
   const handleContinueShopping = (e) => {
     e.preventDefault();
-    setShowCart(false);
+    setShowCart(!showCart);
   };
 
-  const [addedToCart, setAddedToCart] = useState({});
-
-  const handleAddToCart = (plant) => {
-    console.log(plant.name);
-    dispatch(addItem(plant));
-    setAddedToCart((prevState) => ({
-      ...prevState,
-      [plant.name]: true, // Set the product name as key and value as true to indicate it's added to cart
-    }));
-  };
-
-  const handleRemoveFromCart = (plant) => {
-    dispatch(removeItem(plant));
+  const handleAddToCart = (product) => {
+    dispatch(addItem(product));
   };
 
   return (
     <div>
       <div className="navbar" style={styleObj}>
         <div className="tag">
-          <div
-            style={{ cursor: "pointer" }}
-            onClick={props.toLanding}
-            className="luxury"
-          >
+          <div className="luxury">
             <img
               src="https://cdn.pixabay.com/photo/2020/08/05/13/12/eco-5465432_1280.png"
               alt=""
             />
-            <a href="/" style={{ textDecoration: "none" }}>
+            <a href="/e-plantshopping" style={{ textDecoration: "none" }}>
               <div>
-                <h3 style={{ color: "white" }}>Hassan's Paradise Nursery</h3>
+                <h3 style={{ color: "white" }}>Paradise Nursery</h3>
                 <i style={{ color: "white" }}>Where Green Meets Serenity</i>
               </div>
             </a>
@@ -346,16 +320,6 @@ function ProductList(props) {
             {" "}
             <a href="#" onClick={(e) => handleCartClick(e)} style={styleA}>
               <h1 className="cart">
-                <label
-                  style={{
-                    zIndex: 1,
-                    position: "fixed",
-                    fontSize: "1.5rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  {totalItems()}
-                </label>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 256 256"
@@ -376,6 +340,15 @@ function ProductList(props) {
                     id="mainIconPathAttribute"
                   ></path>
                 </svg>
+                {/* {Object.keys(addedToCart).length > 0 && (
+                  <span className="cart_quantity_count">
+                    {Object.values(addedToCart).reduce(
+                      (total, qty) => total + qty,
+                      0,
+                    )}
+                  </span>
+                )} */}
+                <span className="cart_quantity_count">{numberOfItems}</span>
               </h1>
             </a>
           </div>
@@ -384,38 +357,37 @@ function ProductList(props) {
       {!showCart ? (
         <div className="product-grid">
           {plantsArray.map((category, index) => (
-            <div key={index}>
+            <div className="mt-2" key={index}>
               <h1>
-                <div className="category-title">{category.category}</div>
+                <div className="center-all">
+                  <p className="border-y">{category.category}</p>
+                </div>
               </h1>
               <div className="product-list">
                 {category.plants.map((plant, plantIndex) => (
                   <div className="product-card" key={plantIndex}>
+                    <div className="product-title">{plant.name}</div>
                     <img
                       className="product-image"
                       src={plant.image}
                       alt={plant.name}
                     />
-                    <div className="product-title">{plant.name}</div>
-                    <div className="product-description">
-                      {plant.description}
-                    </div>
-                    <div className="product-cost">{plant.cost}</div>
+                    <p>{plant.description}</p>
+
                     <button
-                      style={{
-                        backgroundColor: addedToCart[plant.name]
-                          ? "gray"
-                          : "#615EFC",
-                      }}
-                      disabled={addedToCart[plant.name] ? true : false}
-                      className="product-button"
-                      onClick={() =>
-                        addedToCart[plant.name]
-                          ? handleRemoveFromCart(plant)
-                          : handleAddToCart(plant)
-                      }
+                      className={`product-button ${
+                        itemState.some((item) => item.name === plant.name)
+                          ? "added-to-cart"
+                          : ""
+                      }`}
+                      onClick={() => handleAddToCart(plant)}
+                      disabled={itemState.some(
+                        (item) => item.name === plant.name
+                      )}
                     >
-                      Add to Cart
+                      {itemState.some((item) => item.name === plant.name)
+                        ? "Added"
+                        : "Add to Cart"}
                     </button>
                   </div>
                 ))}
